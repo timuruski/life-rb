@@ -103,6 +103,10 @@ class Game < Hasu::Window
     case id
     when Gosu::MS_LEFT
       @drawing = nil
+    when Gosu::KB_C
+      @world = World.new(WIDTH / SCALE, HEIGHT / SCALE)
+    when Gosu::KB_R
+      @world = World.random(WIDTH / SCALE, HEIGHT / SCALE)
     end
   end
 end
@@ -113,9 +117,14 @@ module ZOrder
 end
 
 class World
+  def self.random(width, height)
+    grid = Array.new(width) { Array.new(height) { rand > 0.1 ? 0 : 1 } }
+    new(width, height, grid)
+  end
+
   def initialize(width, height, grid = nil)
     @width, @height = width, height
-    @grid = grid || Array.new(width) { Array.new(height) { rand > 0.1 ? 0 : 1 } }
+    @grid = grid || Array.new(width) { Array.new(height, 0) }
   end
 
   def [](x,y)
@@ -138,14 +147,14 @@ class World
   end
 
   def map
-    new_grid = Array.new(@width) { Array.new(@height) }
+    new_grid = Array.new(@width) { Array.new(@height, 0) }
 
     @grid.each_with_index do |row, x|
       row.each_with_index do |value, y|
         new_grid[x][y] = yield(value, x, y)
       rescue => error
         puts "#{error} drawing #{x},#{y}"
-        # raise error
+        raise error
         # binding.pry
       end
     end
