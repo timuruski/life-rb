@@ -98,22 +98,20 @@ class Game < Hasu::Window
   def draw_grid
     return unless @grid
 
-    x_offset = (@grid_x - GRID_SIZE / 2) * SCALE
-    y_offset = (@grid_y - GRID_SIZE / 2) * SCALE
+    GRID_WIDTH.times do |n|
+      Gosu.draw_line(
+        n * SCALE, 0, Gosu::Color::GRAY,
+        n * SCALE, HEIGHT, Gosu::Color::GRAY,
+        ZOrder::UI
+      )
+    end
 
-    Gosu.translate(x_offset, y_offset) do
-      (GRID_SIZE + 1).times do |n|
-        Gosu.draw_line(
-          n * SCALE, 0, Gosu::Color::GRAY,
-          n * SCALE, GRID_SIZE * SCALE, Gosu::Color::GRAY,
-          ZOrder::UI
-        )
-        Gosu.draw_line(
-          0, n * SCALE, Gosu::Color::GRAY,
-          GRID_SIZE * SCALE, n * SCALE, Gosu::Color::GRAY,
-          ZOrder::UI
-        )
-      end
+    GRID_HEIGHT.times do |n|
+      Gosu.draw_line(
+        0, n * SCALE, Gosu::Color::GRAY,
+        WIDTH, n * SCALE, Gosu::Color::GRAY,
+        ZOrder::UI
+      )
     end
   end
 
