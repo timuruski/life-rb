@@ -13,6 +13,8 @@ class Game < Hasu::Window
   WIDTH = 640
   HEIGHT = 480
   SCALE = 10
+  GRID_WIDTH = WIDTH / SCALE
+  GRID_HEIGHT = HEIGHT / SCALE
 
   def initialize
     super(WIDTH, HEIGHT)
@@ -20,17 +22,22 @@ class Game < Hasu::Window
   end
 
   def reset
-    Random.srand(SEED)
-    @world = World.new(WIDTH / SCALE, HEIGHT / SCALE)
+    # Random.srand(SEED)
+
+    @world = World.new(GRID_WIDTH, GRID_HEIGHT)
     @last_tick = Gosu.milliseconds
     @drawing = false
     @running = true
+    @grid = false
     @font = Gosu::Font.new(20)
   end
 
   def update
+    @grid_x = (mouse_x / SCALE).floor
+    @grid_y = (mouse_y / SCALE).floor
+
     if @drawing
-      draw_world(@drawing)
+      paint_cells(@drawing)
     elsif @running
       if Gosu.milliseconds - @last_tick > 40
         @last_tick = Gosu.milliseconds
@@ -39,16 +46,13 @@ class Game < Hasu::Window
     end
   end
 
-  def draw_world(value)
-    grid_x = (mouse_x / SCALE).floor
-    grid_y = (mouse_y / SCALE).floor
-
-    if grid_x != @grid_x || grid_y != @grid_y
-      @world[grid_x, grid_y] = value
+  def paint_cells(value)
+    if @grid_x != @last_grid_x || @grid_y != @last_grid_y
+      @world[@grid_x, @grid_y] = value
     end
 
-    @grid_x = grid_x
-    @grid_y = grid_y
+    @last_grid_x = @grid_x
+    @last_grid_y = @grid_y
   end
 
   def update_world
@@ -70,19 +74,52 @@ class Game < Hasu::Window
   end
 
   def draw
-    @world.each do |value, x, y|
-      color = value == 0 ? Gosu::Color::WHITE : Gosu::Color::BLACK
-      Gosu.draw_rect(x * SCALE, y * SCALE, SCALE, SCALE, color, ZOrder::WORLD)
-    end
+    draw_world
+    draw_grid
     draw_mouse_pos
   end
 
-  def draw_mouse_pos
-    grid_x = (mouse_x / SCALE).floor
-    grid_y = (mouse_y / SCALE).floor
+  def draw_world
+    @world.each do |value, x, y|
+      if value == 0
+        color = Gosu::Color::WHITE
+      elsif @running
+        color = Gosu::Color::BLACK
+      else
+        color = Gosu::Color::GRAY
+      end
 
-    # @font.draw_text("#{grid_x}, #{grid_y}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::RED)
-    Gosu.draw_rect(grid_x * SCALE, grid_y * SCALE, SCALE, SCALE, Gosu::Color::RED, ZOrder::UI)
+      Gosu.draw_rect(x * SCALE, y * SCALE, SCALE, SCALE, color, ZOrder::WORLD)
+    end
+  end
+
+  GRID_SIZE = 10
+
+  def draw_grid
+    return unless @grid
+
+    x_offset = (@grid_x - GRID_SIZE / 2) * SCALE
+    y_offset = (@grid_y - GRID_SIZE / 2) * SCALE
+
+    Gosu.translate(x_offset, y_offset) do
+      (GRID_SIZE + 1).times do |n|
+        Gosu.draw_line(
+          n * SCALE, 0, Gosu::Color::GRAY,
+          n * SCALE, GRID_SIZE * SCALE, Gosu::Color::GRAY,
+          ZOrder::UI
+        )
+        Gosu.draw_line(
+          0, n * SCALE, Gosu::Color::GRAY,
+          GRID_SIZE * SCALE, n * SCALE, Gosu::Color::GRAY,
+          ZOrder::UI
+        )
+      end
+    end
+  end
+
+  def draw_mouse_pos
+    # @font.draw_text("#{@grid_x}, #{@grid_y}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::RED)
+    Gosu.draw_rect(@grid_x * SCALE, @grid_y * SCALE, SCALE, SCALE, Gosu::Color::RED, ZOrder::UI)
   end
 
   def button_down(id)
@@ -92,10 +129,7 @@ class Game < Hasu::Window
     when Gosu::KB_ESCAPE
       close
     when Gosu::MS_LEFT
-      grid_x = (mouse_x / SCALE).floor
-      grid_y = (mouse_y / SCALE).floor
-
-      @drawing = @world[grid_x, grid_y] == 1 ? 0 : 1
+      @drawing = @world[@grid_x, @grid_y] == 1 ? 0 : 1
     end
   end
 
@@ -104,9 +138,12 @@ class Game < Hasu::Window
     when Gosu::MS_LEFT
       @drawing = nil
     when Gosu::KB_C
-      @world = World.new(WIDTH / SCALE, HEIGHT / SCALE)
+      @running= false
+      @world = World.new(GRID_WIDTH, GRID_HEIGHT)
     when Gosu::KB_R
-      @world = World.random(WIDTH / SCALE, HEIGHT / SCALE)
+      @world = World.random(GRID_WIDTH, GRID_HEIGHT)
+    when Gosu::KB_G
+      @grid = !@grid
     end
   end
 end
