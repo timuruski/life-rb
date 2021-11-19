@@ -12,7 +12,7 @@ class Game < Hasu::Window
 
   WIDTH = 640
   HEIGHT = 480
-  SCALE = 10
+  SCALE = 5
   GRID_WIDTH = WIDTH / SCALE
   GRID_HEIGHT = HEIGHT / SCALE
 
